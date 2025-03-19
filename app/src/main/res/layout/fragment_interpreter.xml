@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/interpreterView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg"
+    android:backgroundTint="@color/bg"
+    tools:context=".Interpreter">
+
+    <!-- TODO: Update blank fragment layout -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/interpreterContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:padding="10dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="MissingConstraints">
+
+            <View
+                android:id="@+id/square1"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:background="@color/flex_on"
+                android:clickable="false"
+                android:translationX="-10dp" />
+
+            <View
+                android:id="@+id/square2"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:background="@color/flex_on"
+                android:clickable="false"
+                android:translationX="-5dp" />
+
+            <View
+                android:id="@+id/square3"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:background="@color/flex_off"
+                android:clickable="false" />
+
+            <View
+                android:id="@+id/square4"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:background="@color/flex_on"
+                android:clickable="false"
+                android:translationX="5dp" />
+
+            <View
+                android:id="@+id/square5"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
+                android:background="@color/flex_off"
+                android:clickable="false"
+                android:translationX="10dp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/displayText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="HELLO"
+            android:textAlignment="center"
+            android:textAllCaps="true"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:textStyle="bold|italic"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <Spinner
+            android:id="@+id/alphabetSpinner"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="128dp"
+            android:layout_marginEnd="128dp"
+            android:layout_marginBottom="32dp"
+            android:background="@color/red"
+            android:backgroundTint="@color/red"
+            android:dropDownWidth="match_parent"
+            android:entries="@array/alphabets_array"
+            android:foregroundTint="@color/white"
+            android:popupBackground="@color/red"
+            android:spinnerMode="dropdown"
+            android:textAlignment="center"
+            android:visibility="visible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</FrameLayout>
