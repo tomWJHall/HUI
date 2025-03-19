@@ -3,6 +3,7 @@ package com.example.hui;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -52,13 +53,14 @@ public class Interpreter extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
+//        SharedViewModel sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+//        sharedViewModel.getReceivedData().observe(getViewLifecycleOwner(), this::setBinaryDisplay);
+
         return inflater.inflate(R.layout.fragment_interpreter, container, false);
     }
 
-    public void setBinaryDisplay(int index) {
+    public void setBinaryDisplay(String binary) {
         int[] squares = {R.id.square1, R.id.square2, R.id.square3, R.id.square4, R.id.square5};
-        String binary = String.format("%5s", Integer.toBinaryString(index)).replace(' ', '0');
 
         for (int i = 0; i < 5; i++) {
             View square = requireView().findViewById(squares[i]);
