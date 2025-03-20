@@ -3,6 +3,8 @@ package com.example.hui;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -59,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     @RequiresApi(api = Build.VERSION_CODES.S)
-    @SuppressLint("SetTextI18n")
+    @SuppressLint({"SetTextI18n", "ObsoleteSdkInt"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,7 +69,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         sharedViewModel = new ViewModelProvider(this).get(SharedViewModel.class);
-        Log.d("Bluetooth Devices", "connectedDevices.toString()");
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -75,14 +76,21 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.BLUETOOTH_CONNECT}, 1);
-            return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.BLUETOOTH_CONNECT}, 1);
+                return;
+            }
         }
+
+//        BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+//        connectedDevices = bluetoothManager.getConnectedDevices(BluetoothProfile.GATT);
 
         BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         connectedDevices = new ArrayList<>(bluetoothAdapter.getBondedDevices());
+
+        Log.d("Bluetooth Devices", connectedDevices.toString());
 
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction transaction = fragmentManager.beginTransaction();
@@ -173,6 +181,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private final BroadcastReceiver bluetoothDataReceiver = new BroadcastReceiver() {
+        @SuppressLint("MissingPermission")
         @Override
         public void onReceive(Context context, Intent intent) {
             String receivedData = intent.getStringExtra("bluetooth_data");
@@ -181,14 +190,28 @@ public class MainActivity extends AppCompatActivity {
                 bluetoothData = receivedData;
                 sharedViewModel.setData(bluetoothData);
             }
+
+            String action = intent.getAction();
+            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+
+            if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
+                assert device != null;
+                Log.d("Bluetooth", "Device connected: " + device.getName());
+            } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
+                assert device != null;
+                Log.d("Bluetooth", "Device disconnected: " + device.getName());
+            }
         }
     };
 
     public void receiveData(String selectedDeviceName) {
-        Log.d("Connected Bluetooth Device", selectedDeviceName);
+        Log.d("Selected Bluetooth Device", selectedDeviceName);
+        Log.d("Connected Bluetooth devices", connectedDevices.toString());
         if(!connectedDevices.isEmpty()) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                return;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                    return;
+                }
             }
             connectedDevice = connectedDevices.stream()
                     .filter(device -> selectedDeviceName.equals(device.getName()))
@@ -196,6 +219,7 @@ public class MainActivity extends AppCompatActivity {
                     .orElse(null);
 
             if(connectedDevice != null) {
+                Log.d("Connection", selectedDeviceName + " connected. Starting data stream.");
                 receiver.connectToDevice(connectedDevice.getAddress());
             }
         }

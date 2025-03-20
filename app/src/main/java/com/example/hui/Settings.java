@@ -54,13 +54,12 @@ public class Settings extends Fragment {
 
             Spinner mySpinner = view.findViewById(R.id.bluetoothSelector);
 
-            if(connectedDevicesString.isEmpty()) {
+            if(!connectedDevicesString.isEmpty()) {
                 List<String> connectedDevicesStrings = Arrays.asList(connectedDevicesString.split(";"));
-                connectedDevicesStrings.forEach(device -> connectedDevices.add(Arrays.asList(device.split("|"))));
+                connectedDevicesStrings.forEach(device -> connectedDevices.add(Arrays.asList(device.split("\\|"))));
 
                 SharedPreferences prefs = requireActivity().getSharedPreferences("BluetoothSelections", Context.MODE_PRIVATE);
-//                Set<String> defaultEntries = connectedDevices.stream().map(subList -> subList.get(0)).collect(Collectors.toSet());
-                Set<String> defaultEntries = new HashSet<>(Arrays.asList("Option 1", "Option 2", "Option 3"));
+                Set<String> defaultEntries = connectedDevices.stream().map(subList -> subList.get(0)).collect(Collectors.toSet());
                 Set<String> spinnerData = prefs.getStringSet("spinner_entries", defaultEntries);
 
                 List<String> entriesList = new ArrayList<>(spinnerData);

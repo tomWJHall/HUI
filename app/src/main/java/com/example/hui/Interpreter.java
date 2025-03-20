@@ -5,6 +5,7 @@ import android.os.Bundle;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -53,13 +54,14 @@ public class Interpreter extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-//        SharedViewModel sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-//        sharedViewModel.getReceivedData().observe(getViewLifecycleOwner(), this::setBinaryDisplay);
+        SharedViewModel sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+        sharedViewModel.getReceivedData().observe(getViewLifecycleOwner(), this::setBinaryDisplay);
 
         return inflater.inflate(R.layout.fragment_interpreter, container, false);
     }
 
     public void setBinaryDisplay(String binary) {
+        Log.d("Binary", binary);
         int[] squares = {R.id.square1, R.id.square2, R.id.square3, R.id.square4, R.id.square5};
 
         for (int i = 0; i < 5; i++) {
