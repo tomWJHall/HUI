@@ -8,35 +8,50 @@
     android:contentDescription="@string/alphabets"
     tools:context=".Alphabets">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/alphabetsContainer"
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <Button
-            android:id="@+id/addAlphabet"
-            android:layout_width="0dp"
-            android:layout_height="68sp"
-            android:layout_marginStart="64dp"
-            android:layout_marginEnd="64dp"
-            android:layout_marginBottom="64dp"
-            android:text="+"
-            android:textSize="34sp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-        <Button
-            android:id="@+id/alphabet"
-            android:layout_width="0dp"
-            android:layout_height="68sp"
-            android:layout_marginStart="64dp"
-            android:layout_marginTop="64dp"
-            android:layout_marginEnd="64dp"
-            android:text="Standard"
-            android:textSize="24sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/alphabetsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <Button
+                    android:id="@+id/standard_alphabet"
+                    android:layout_width="0dp"
+                    android:layout_height="68sp"
+                    android:layout_marginStart="64dp"
+                    android:layout_marginTop="64dp"
+                    android:layout_marginEnd="64dp"
+                    android:text="Standard"
+                    android:textSize="24sp"
+                    android:backgroundTint="#143131"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <Button
+                    android:id="@+id/addAlphabet"
+                    android:layout_width="0dp"
+                    android:layout_height="68sp"
+                    android:layout_marginStart="64dp"
+                    android:layout_marginTop="64dp"
+                    android:layout_marginEnd="64dp"
+                    android:text="+"
+                    android:backgroundTint="#143131"
+                    android:textSize="34sp"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/standard_alphabet" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </LinearLayout>
+    </ScrollView>
+
 </FrameLayout>

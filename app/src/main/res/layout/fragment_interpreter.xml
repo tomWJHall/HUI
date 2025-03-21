@@ -31,7 +31,7 @@
                 android:id="@+id/square1"
                 android:layout_width="10dp"
                 android:layout_height="10dp"
-                android:background="@color/flex_on"
+                android:background="@color/flex_off"
                 android:clickable="false"
                 android:translationX="-10dp" />
 
@@ -39,7 +39,7 @@
                 android:id="@+id/square2"
                 android:layout_width="10dp"
                 android:layout_height="10dp"
-                android:background="@color/flex_on"
+                android:background="@color/flex_off"
                 android:clickable="false"
                 android:translationX="-5dp" />
 
@@ -54,7 +54,7 @@
                 android:id="@+id/square4"
                 android:layout_width="10dp"
                 android:layout_height="10dp"
-                android:background="@color/flex_on"
+                android:background="@color/flex_off"
                 android:clickable="false"
                 android:translationX="5dp" />
 
@@ -71,7 +71,7 @@
             android:id="@+id/displayText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="HELLO"
+            android:text="Waiting for information..."
             android:textAlignment="center"
             android:textAllCaps="true"
             android:textColor="@color/white"
