@@ -1,5 +1,6 @@
 package com.example.hui;
 
+import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -14,6 +15,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import androidx.core.content.ContextCompat;
@@ -23,7 +25,6 @@ import androidx.lifecycle.ViewModelProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class Alphabet extends Fragment {
     private static final String ARG_ALPHA = "alphabetName";
@@ -58,6 +59,7 @@ public class Alphabet extends Fragment {
         return view;
     }
 
+    @SuppressLint({"WrongViewCast", "UseSwitchCompatOrMaterialCode"})
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -72,6 +74,20 @@ public class Alphabet extends Fragment {
                 break;
             }
         }
+
+        Switch defaultSpaceSwitch;
+        defaultSpaceSwitch = view.findViewById(R.id.spacing);
+
+        boolean defaultSpace = alphabet.get(32).equals("\\T");
+        defaultSpaceSwitch.setChecked(defaultSpace);
+
+        int finalAlphabetIndex = alphabetIndex;
+        defaultSpaceSwitch.setOnClickListener(v -> {
+            boolean isChecked = ((Switch) v).isChecked();
+
+            alphabet.set(32, isChecked ? "\\T" : "");
+            alphabets.set(finalAlphabetIndex, alphabet);
+        });
 
         List<List<String>> mutableAlphabets = alphabets;
         List<String> mutableAlphabet = mutableAlphabets.get(alphabetIndex);

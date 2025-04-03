@@ -38,8 +38,7 @@ public class Interpreter extends Fragment {
     private List<String> selectedAlphabet = new ArrayList<String>();
 
     public Interpreter() {
-        // Required empty public constructor
-        displayString = "HELLO";
+
     }
 
     /**
@@ -136,11 +135,22 @@ public class Interpreter extends Fragment {
             square.setBackgroundResource(colour);
         }
 
-        if(Integer.parseInt(binary.toString(), 2) == 0) {
+        if(Integer.parseInt(binary.toString(), 2) == 0 || Objects.equals(selectedAlphabet.get(Integer.parseInt(binary.toString(), 2)), "\\CLEAR")) {
             displayString = "";
         }
+        else if(Objects.equals(selectedAlphabet.get(Integer.parseInt(binary.toString(), 2)), "\\BACKSPACE")) {
+            if(selectedAlphabet.contains(" ")) {
+                displayString = displayString.substring(0, displayString.length() - 1);
+            }
+            else {
+                displayString = displayString.substring(0, displayString.lastIndexOf(" "));
+            }
+        }
         else {
-            displayString = selectedAlphabet.get(Integer.parseInt(binary.toString(), 2));
+            if(selectedAlphabet.get(32).equals("\\T")) {
+                displayString += " ";
+            }
+            displayString += selectedAlphabet.get(Integer.parseInt(binary.toString(), 2));
         }
 
         TextView displayView = requireView().findViewById(R.id.displayText);

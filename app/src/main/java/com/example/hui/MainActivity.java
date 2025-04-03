@@ -45,22 +45,6 @@ public class MainActivity extends AppCompatActivity {
     private String bluetoothData = "";
     private SharedViewModel sharedViewModel;
 
-    private final List<List<String>> alphabets = Arrays.asList(Arrays.asList(
-            "",
-            "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-            "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", // Index 1-26
-            " ", "?", ".", "⌫", "!", "@"
-    ));
-
-    private List<String> selectedAlphabet = Arrays.asList(
-            "",  // Index 0 (empty)
-            "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-            "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", // Index 1-26
-            " ", "?", ".", "⌫", "!", "@"
-    );
-
-
-
     @RequiresApi(api = Build.VERSION_CODES.S)
     @SuppressLint({"SetTextI18n", "ObsoleteSdkInt"})
     @Override
