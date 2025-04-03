@@ -1,30 +1,48 @@
 package com.example.hui;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.provider.ContactsContract;
+import android.speech.tts.TextToSpeech;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
+import android.Manifest;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import kotlin.ParameterName;
+
 /**
  * A simple {@link Fragment} subclass.
- * Use the {@link Interpreter#newInstance} factory method to
+ * Use the factory method to
  * create an instance of this fragment.
  */
 public class Interpreter extends Fragment {
@@ -36,25 +54,13 @@ public class Interpreter extends Fragment {
     private SharedViewModel viewModel;
     private List<List<String>> alphabets = new ArrayList<List<String>>();
     private List<String> selectedAlphabet = new ArrayList<String>();
+    private boolean enableSpeech = false;
+    private TextToSpeech t1;
+    private boolean enableSMS = false;
+    private List<String> recipient;
 
     public Interpreter() {
 
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param displayString displayString.
-     * @return A new instance of fragment Interpreter.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static Interpreter newInstance(String displayString) {
-        Interpreter fragment = new Interpreter();
-        Bundle args = new Bundle();
-        args.putString(ARG_DISPLAY, displayString);
-        fragment.setArguments(args);
-        return fragment;
     }
 
     @Override
@@ -63,6 +69,15 @@ public class Interpreter extends Fragment {
         if (getArguments() != null) {
             displayString = getArguments().getString(ARG_DISPLAY);
         }
+
+        t1 = new TextToSpeech(getContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if(status != TextToSpeech.ERROR) {
+                    t1.setLanguage(Locale.getDefault());
+                }
+            }
+        });
     }
 
     @Override
@@ -70,6 +85,10 @@ public class Interpreter extends Fragment {
                              Bundle savedInstanceState) {
         SharedViewModel sharedViewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
         sharedViewModel.getReceivedData().observe(getViewLifecycleOwner(), this::setBinaryDisplay);
+
+        if (ContextCompat.checkSelfPermission(requireContext(),  Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(requireActivity(), new String[]{Manifest.permission.READ_CONTACTS}, 1);
+        }
 
         return inflater.inflate(R.layout.fragment_interpreter, container, false);
     }
@@ -80,6 +99,43 @@ public class Interpreter extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
+
+        ImageButton speechButton = view.findViewById(R.id.speakButton);
+        speechButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                enableSpeech = !enableSpeech;
+                speechButton.setImageResource(enableSpeech ? android.R.drawable.ic_lock_silent_mode_off : android.R.drawable.ic_lock_silent_mode);
+                if(enableSpeech) {
+                    speakText("Speech enabled");
+                }
+            }
+        });
+
+        ImageButton smsButton = view.findViewById(R.id.smsButton);
+        smsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                enableSMS = !enableSMS;
+                smsButton.setImageResource(enableSMS ? android.R.drawable.stat_notify_chat : android.R.drawable.button_onoff_indicator_off);
+
+                if(enableSMS) {
+                    Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+                    if(recipient != null && recipient instanceof ArrayList && recipient.size() == 3) {
+                        Toast.makeText(getContext(), "You will be sending messages to: " + recipient.get(1) + " - " + recipient.get(2), Toast.LENGTH_LONG).show();
+                    }
+                    else {
+                        pickContactLauncher.launch(intent);
+                    }
+                }
+            }
+        });
+        smsButton.setOnLongClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+            pickContactLauncher.launch(intent);
+            return true;
+        });
+
         alphabets = viewModel.getAlphabets().getValue();
 
         int alphaIndex = 0;
@@ -127,33 +183,126 @@ public class Interpreter extends Fragment {
 
     public void setBinaryDisplay(Object binary) {
         Log.d("Binary", binary.toString());
-        int[] squares = {R.id.square1, R.id.square2, R.id.square3, R.id.square4, R.id.square5};
 
-        for (int i = 0; i < 5; i++) {
-            View square = requireView().findViewById(squares[i]);
-            int colour = binary.toString().charAt(i) == '1' ? R.color.flex_on : R.color.flex_off;
-            square.setBackgroundResource(colour);
-        }
-
-        if(Integer.parseInt(binary.toString(), 2) == 0 || Objects.equals(selectedAlphabet.get(Integer.parseInt(binary.toString(), 2)), "\\CLEAR")) {
-            displayString = "";
-        }
-        else if(Objects.equals(selectedAlphabet.get(Integer.parseInt(binary.toString(), 2)), "\\BACKSPACE")) {
-            if(selectedAlphabet.contains(" ")) {
-                displayString = displayString.substring(0, displayString.length() - 1);
-            }
-            else {
-                displayString = displayString.substring(0, displayString.lastIndexOf(" "));
-            }
+        if(binary.toString().equals("s")) {
+            if(enableSMS) sendSMS(recipient.get(2), displayString);
         }
         else {
-            if(selectedAlphabet.get(32).equals("\\T")) {
-                displayString += " ";
+
+            int[] squares = {R.id.square1, R.id.square2, R.id.square3, R.id.square4, R.id.square5};
+
+            for (int i = 0; i < 5; i++) {
+                View square = requireView().findViewById(squares[i]);
+                int colour = binary.toString().charAt(i) == '1' ? R.color.flex_on : R.color.flex_off;
+                square.setBackgroundResource(colour);
             }
-            displayString += selectedAlphabet.get(Integer.parseInt(binary.toString(), 2));
+
+            if (Integer.parseInt(binary.toString(), 2) == 0 || Objects.equals(selectedAlphabet.get(Integer.parseInt(binary.toString(), 2)), "\\CLEAR")) {
+                displayString = "";
+            } else if (Objects.equals(selectedAlphabet.get(Integer.parseInt(binary.toString(), 2)), "\\BACKSPACE")) {
+                if (selectedAlphabet.contains(" ")) {
+                    displayString = displayString.substring(0, displayString.length() - 1);
+                } else {
+                    displayString = displayString.substring(0, displayString.lastIndexOf(" "));
+                }
+            } else {
+                if (selectedAlphabet.get(32).equals("\\T")) {
+                    displayString += " ";
+                }
+                displayString += selectedAlphabet.get(Integer.parseInt(binary.toString(), 2));
+
+                if(!selectedAlphabet.contains(" ")) {
+                    speakText(selectedAlphabet.get(Integer.parseInt(binary.toString(), 2)));
+                }
+                else if(selectedAlphabet.get(Integer.parseInt(binary.toString(), 2)).equals(" ")) {
+                    String[] words = displayString.split(" ");
+
+                    String toSpeak;
+                    int howFarBack = 2;
+                    do {
+                        toSpeak = words[words.length - howFarBack];
+                        howFarBack++;
+                    } while(toSpeak.equals(" ") || toSpeak.isEmpty());
+
+                    speakText(toSpeak);
+                }
+            }
+
+            TextView displayView = requireView().findViewById(R.id.displayText);
+            displayView.setText(displayString);
+        }
+    }
+
+    private void sendSMS(String phoneNumber, String message) {
+        SmsManager smsManager = SmsManager.getDefault();
+        smsManager.sendTextMessage(phoneNumber, null, message, null, null);
+    }
+
+    private final ActivityResultLauncher<Intent> pickContactLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() == Activity.RESULT_OK) {
+                    Intent data = result.getData();
+                    if (data != null) {
+                        Uri contactUri = data.getData();
+                        getContactDetails(contactUri);
+                    }
+                }
+            }
+    );
+
+    private void getContactDetails(Uri contactUri) {
+        Cursor cursor = requireContext().getContentResolver().query(
+                contactUri,
+                null,
+                null,
+                null,
+                null
+        );
+
+        if (cursor != null && cursor.moveToFirst()) {
+            int idIndex = cursor.getColumnIndex(ContactsContract.Contacts._ID);
+            int nameIndex = cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME);
+
+            String contactId = cursor.getString(idIndex);
+            String contactName = cursor.getString(nameIndex);
+
+            cursor.close();
+
+            String phoneNumber = getPhoneNumber(contactId); // Fetch phone number
+
+            List<String> contact = new ArrayList<String>();
+            contact.add(contactId);
+            contact.add(contactName);
+            contact.add(phoneNumber);
+
+            recipient = contact;
+
+            Toast.makeText(getContext(), "You will be sending messages to: " + recipient.get(1) + " - " + recipient.get(2), Toast.LENGTH_SHORT).show();
+        }
+    }
+    private String getPhoneNumber(String contactId) {
+        Cursor phoneCursor = requireContext().getContentResolver().query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                null,
+                ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                new String[]{contactId},
+                null
+        );
+
+        if (phoneCursor != null && phoneCursor.moveToFirst()) {
+            int numberIndex = phoneCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+            String phoneNumber = phoneCursor.getString(numberIndex);
+
+            phoneCursor.close();
+
+            return phoneNumber;
         }
 
-        TextView displayView = requireView().findViewById(R.id.displayText);
-        displayView.setText(displayString);
+        return null;
+    }
+
+    public void speakText(String speak) {
+        t1.speak(speak, TextToSpeech.QUEUE_FLUSH, null, null);
     }
 }
