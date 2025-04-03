@@ -23,6 +23,7 @@ import androidx.lifecycle.ViewModelProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Alphabet extends Fragment {
     private static final String ARG_ALPHA = "alphabetName";
@@ -54,9 +55,6 @@ public class Alphabet extends Fragment {
         TextView textView = view.findViewById(R.id.alphabet_title);
         textView.setText(alphabetName);
 
-        Button backButton = view.findViewById(R.id.back_button);
-        backButton.setOnClickListener(v -> requireActivity().getSupportFragmentManager().popBackStack());
-
         return view;
     }
 
@@ -65,10 +63,9 @@ public class Alphabet extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-
         alphabets = viewModel.getAlphabets().getValue();
+
         int alphabetIndex;
-        Log.d("ALPHABETs", alphabets.toString());
         for(alphabetIndex = 0 ; alphabetIndex < alphabets.size() ; alphabetIndex++) {
             if(Objects.equals(alphabets.get(alphabetIndex).get(0), alphabetName)) {
                 alphabet = alphabets.get(alphabetIndex);
@@ -76,11 +73,14 @@ public class Alphabet extends Fragment {
             }
         }
 
+        List<List<String>> mutableAlphabets = alphabets;
+        List<String> mutableAlphabet = mutableAlphabets.get(alphabetIndex);
+
         GridLayout alphaTable = view.findViewById(R.id.alpha);
         alphaTable.setColumnCount(2);
 
         List<EditText> editTextList = new ArrayList<>();
-        for (int i = 0; i < 33; i++) {
+        for (int i = 0; i < 32; i++) {
             if(i == 0) {
                 TextView leftTitle = new TextView(requireContext());
                 leftTitle.setText("SIGN");
@@ -130,7 +130,7 @@ public class Alphabet extends Fragment {
 
             for (int j = 0; j < 5; j++) {
                 int repeat = 1 << (4 - j + 1);  // 2^(j+1)
-                boolean isOn = ((i - 1) % repeat) < (repeat / 2);
+                boolean isOn = (i % repeat) < (repeat / 2);
 
                 View square = new View(getContext());
 
@@ -165,7 +165,13 @@ public class Alphabet extends Fragment {
             input.setLayoutParams(rightParams);  // Set the correct params for input
 
             editTextList.add(input);
-            int finalAlphabetIndex = alphabetIndex;
+
+            input.setOnFocusChangeListener((v, keyCode) -> {
+                    int index = editTextList.indexOf(v); // Get index of this EditText
+
+                    mutableAlphabet.set(index+1, input.getText().toString()); // Update the value
+                });
+
             input.setOnKeyListener((v, keyCode, event) -> {
                 if (event.getAction() == KeyEvent.ACTION_DOWN && keyCode == KeyEvent.KEYCODE_ENTER) {
                     View next = v.focusSearch(View.FOCUS_DOWN); // Find next focusable view
@@ -177,13 +183,6 @@ public class Alphabet extends Fragment {
                     if (index != -1 && index < editTextList.size() - 1) {
                         editTextList.get(index + 1).requestFocus(); // Move to next EditText
                     }
-                    List<List<String>> mutableAlphabets = new ArrayList<>(alphabets);
-                    List<String> mutableAlphabet = new ArrayList<>(mutableAlphabets.get(finalAlphabetIndex));
-
-                    mutableAlphabet.set(index+1, input.getText().toString()); // Update the value
-                    mutableAlphabets.set(finalAlphabetIndex, mutableAlphabet);
-
-                    viewModel.setAlphabets(mutableAlphabets);
 
                     return true; // Consume the event
                 }
@@ -194,7 +193,25 @@ public class Alphabet extends Fragment {
             rightParams.width = GridLayout.LayoutParams.MATCH_PARENT;
 
             alphaTable.addView(input, rightParams);
+
         }
+
+        Button backButton = view.findViewById(R.id.back_button);
+        int finalAlphabetIndex1 = alphabetIndex;
+        backButton.setOnClickListener(v -> {
+            if(finalAlphabetIndex1 != 0) {
+                for(int index = 1 ; index < 32 ; index++) {
+                    int editTextIndex = index-1; // Get index of this EditText
+                    EditText editTextInput = editTextList.get(editTextIndex);
+
+                    mutableAlphabet.set(index, editTextInput.getText().toString()); // Update the value
+                }
+
+                mutableAlphabets.set(finalAlphabetIndex1, mutableAlphabet);
+                viewModel.setAlphabets(mutableAlphabets);
+            }
+            requireActivity().getSupportFragmentManager().popBackStack();
+        });
     }
 
     private int dpToPx(int dp) {

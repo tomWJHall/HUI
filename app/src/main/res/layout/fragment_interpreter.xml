@@ -71,7 +71,7 @@
             android:id="@+id/displayText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Waiting for information..."
+            android:text="Waiting to connect..."
             android:textAlignment="center"
             android:textAllCaps="true"
             android:textColor="@color/white"

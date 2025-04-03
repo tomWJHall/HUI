@@ -34,6 +34,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
     private String pageName = "Interpreter";
@@ -150,6 +151,15 @@ public class MainActivity extends AppCompatActivity {
                     connectedDevicesString.append(device.getName()).append("|").append(device.getAddress()).append(";");
                 }
 
+                List<List<String>> connectedDevicesList = connectedDevices.stream().map(dev -> {
+                    List<String> newDevice = new ArrayList<>();
+                    newDevice.add(dev.getName());
+                    newDevice.add(dev.getAddress());
+                    return newDevice;
+                }).collect(Collectors.toList());
+
+                sharedViewModel.setDevices(connectedDevicesList);
+
                 Bundle bundle = new Bundle();
                 bundle.putString("connectedDevices", connectedDevicesString.toString());
                 settingsFragment.setArguments(bundle);
@@ -186,7 +196,7 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             String receivedData = intent.getStringExtra("bluetooth_data");
             if (receivedData != null) {
-                Log.d("MainActivity", "Received: " + receivedData);
+//                Log.d("MainActivity", "Received: " + receivedData);
                 bluetoothData = receivedData;
                 sharedViewModel.setData(bluetoothData);
             }
@@ -220,6 +230,7 @@ public class MainActivity extends AppCompatActivity {
 
             if(connectedDevice != null) {
                 Log.d("Connection", selectedDeviceName + " connected. Starting data stream.");
+                Log.d("Connection", connectedDevice.getAddress().toString());
                 receiver.connectToDevice(connectedDevice.getAddress());
             }
         }

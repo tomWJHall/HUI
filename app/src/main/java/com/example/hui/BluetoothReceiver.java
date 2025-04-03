@@ -60,10 +60,10 @@ public class BluetoothReceiver {
                 try {
                     bytes = inputStream.read(buffer);
                     String receivedData = new String(buffer, 0, bytes);
-                    Log.d("BluetoothReceiver", "Received: " + receivedData);
+                    Log.d("BluetoothReceiver", "Received: " + receivedData.substring(0, 5));
 
                     // Send data to main thread
-                    mainHandler.post(() -> sendData(receivedData));
+                    mainHandler.post(() -> sendData(receivedData.substring(0, 5)));
 
                 } catch (IOException e) {
                     Log.d("Read Data Error", e.toString());

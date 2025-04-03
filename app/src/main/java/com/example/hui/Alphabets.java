@@ -32,12 +32,7 @@ public class Alphabets extends Fragment {
     private static final String ARG_DISPLAY = "display";
 
     private SharedViewModel viewModel;
-    private List<List<String>> alphabets = List.of(Arrays.asList(
-            "Standard",
-            "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
-            "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", // Index 1-26
-            " ", "?", ".", "⌫", "!", "@"
-    ));
+    private List<List<String>> alphabets;
     private Button lastButton;
 
     public Alphabets() {
@@ -73,10 +68,8 @@ public class Alphabets extends Fragment {
         }
         alphabets = viewModel.getAlphabets().getValue();
 
-        Log.d("ALPHABETS", alphabets.toString());
-
         View buttonStandard = view.findViewById(R.id.standard_alphabet);
-        buttonStandard.setOnClickListener(v -> openAlphabetFragment("Standard", alphabets.get(0)));
+        buttonStandard.setOnClickListener(v -> openAlphabetFragment("STANDARD", alphabets.get(0)));
 
         lastButton = requireView().findViewById(R.id.standard_alphabet);
 
@@ -166,7 +159,7 @@ public class Alphabets extends Fragment {
                         buttonText,
                         "", "", "", "", "", "", "", "", "", "", "", "", "",
                         "", "", "", "", "", "", "", "", "", "", "", "", "", // Index 1-26
-                        "", "", "", "", "", ""
+                        "", "", "", "", ""
                 );
                 viewModel.addAlphabet(newAlphabet);
 
@@ -189,7 +182,9 @@ public class Alphabets extends Fragment {
 
         Button newButton = new Button(getContext());
         newButton.setText(buttonText);
+        newButton.setAllCaps(false);
         newButton.setBackgroundColor(Color.parseColor("#143131"));
+        newButton.setTextColor(Color.parseColor("#FFFFFFFF"));
         newButton.setId(View.generateViewId());
 
         // Set layout parameters to match existing button
@@ -206,7 +201,6 @@ public class Alphabets extends Fragment {
         // Copy styling from existing button
         newButton.setBackground(lastButton.getBackground());
         newButton.setTextSize(TypedValue.COMPLEX_UNIT_PX, lastButton.getTextSize());
-        newButton.setTypeface(lastButton.getTypeface());
         newButton.setTextColor(lastButton.getCurrentTextColor());
         newButton.setPadding(
                 lastButton.getPaddingLeft(),
