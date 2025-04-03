@@ -9,8 +9,11 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Base64;
 import android.util.Log;
 import androidx.core.app.ActivityCompat;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,12 +26,14 @@ public class BluetoothReceiver {
     private BluetoothSocket socket;
     private InputStream inputStream;
     private Context context;
+    private SharedViewModel viewModel;
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public BluetoothReceiver(Context context) {
         this.context = context;
+        viewModel = new ViewModelProvider((ViewModelStoreOwner) this).get(SharedViewModel.class);
     }
 
     public void connectToDevice(String deviceAddress) {
@@ -53,18 +58,15 @@ public class BluetoothReceiver {
 
     private void readData() {
         executorService.execute(() -> {
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[10];
             int bytes;
 
             while (true) {
                 try {
                     bytes = inputStream.read(buffer);
-                    String receivedData = new String(buffer, 0, bytes);
-                    Log.d("BluetoothReceiver", "Received: " + receivedData.substring(0, 5));
-
-                    // Send data to main thread
-                    mainHandler.post(() -> sendData(receivedData.substring(0, 5)));
-
+                    if(bytes == 10) {
+                        viewModel.setData(buffer);
+                    }
                 } catch (IOException e) {
                     Log.d("Read Data Error", e.toString());
                     e.printStackTrace();
@@ -74,7 +76,7 @@ public class BluetoothReceiver {
         });
     }
 
-    private void sendData(String receivedData) {
+    private void sendData(byte[] receivedData) {
         Intent intent = new Intent("BluetoothDataReceived");
         intent.putExtra("bluetooth_data", receivedData);
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent);

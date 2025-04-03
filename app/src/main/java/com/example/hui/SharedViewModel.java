@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class SharedViewModel extends ViewModel {
-    private final MutableLiveData<String> data = new MutableLiveData<>();
+    private final MutableLiveData<byte[]> data = new MutableLiveData<>();
     private MutableLiveData<List<List<String>>> alphabets = new MutableLiveData<>(List.of(Arrays.asList(
             "STANDARD",
             "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
@@ -23,11 +23,11 @@ public class SharedViewModel extends ViewModel {
     private MutableLiveData<List<String>> selectedDevice = new MutableLiveData<>();
 
 
-    public void setData(String value) {
+    public void setData(byte[] value) {
         data.setValue(value);
     }
 
-    public LiveData<String> getReceivedData() {
+    public LiveData<byte[]> getReceivedData() {
         return data;
     }
 

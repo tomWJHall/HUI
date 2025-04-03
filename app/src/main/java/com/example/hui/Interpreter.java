@@ -181,58 +181,6 @@ public class Interpreter extends Fragment {
         });
     }
 
-    public void setBinaryDisplay(Object binary) {
-        Log.d("Binary", binary.toString());
-
-        if(binary.toString().equals("s")) {
-            if(enableSMS) sendSMS(recipient.get(2), displayString);
-        }
-        else {
-
-            int[] squares = {R.id.square1, R.id.square2, R.id.square3, R.id.square4, R.id.square5};
-
-            for (int i = 0; i < 5; i++) {
-                View square = requireView().findViewById(squares[i]);
-                int colour = binary.toString().charAt(i) == '1' ? R.color.flex_on : R.color.flex_off;
-                square.setBackgroundResource(colour);
-            }
-
-            if (Integer.parseInt(binary.toString(), 2) == 0 || Objects.equals(selectedAlphabet.get(Integer.parseInt(binary.toString(), 2)), "\\CLEAR")) {
-                displayString = "";
-            } else if (Objects.equals(selectedAlphabet.get(Integer.parseInt(binary.toString(), 2)), "\\BACKSPACE")) {
-                if (selectedAlphabet.contains(" ")) {
-                    displayString = displayString.substring(0, displayString.length() - 1);
-                } else {
-                    displayString = displayString.substring(0, displayString.lastIndexOf(" "));
-                }
-            } else {
-                if (selectedAlphabet.get(32).equals("\\T")) {
-                    displayString += " ";
-                }
-                displayString += selectedAlphabet.get(Integer.parseInt(binary.toString(), 2));
-
-                if(!selectedAlphabet.contains(" ")) {
-                    speakText(selectedAlphabet.get(Integer.parseInt(binary.toString(), 2)));
-                }
-                else if(selectedAlphabet.get(Integer.parseInt(binary.toString(), 2)).equals(" ")) {
-                    String[] words = displayString.split(" ");
-
-                    String toSpeak;
-                    int howFarBack = 2;
-                    do {
-                        toSpeak = words[words.length - howFarBack];
-                        howFarBack++;
-                    } while(toSpeak.equals(" ") || toSpeak.isEmpty());
-
-                    speakText(toSpeak);
-                }
-            }
-
-            TextView displayView = requireView().findViewById(R.id.displayText);
-            displayView.setText(displayString);
-        }
-    }
-
     private void sendSMS(String phoneNumber, String message) {
         SmsManager smsManager = SmsManager.getDefault();
         smsManager.sendTextMessage(phoneNumber, null, message, null, null);
@@ -304,5 +252,64 @@ public class Interpreter extends Fragment {
 
     public void speakText(String speak) {
         t1.speak(speak, TextToSpeech.QUEUE_FLUSH, null, null);
+    }
+
+    public void setBinaryDisplay(byte[] data) {
+        Log.d("Binary", Arrays.toString(data));
+
+        if(data[0] == 0xC && enableSMS) sendSMS(recipient.get(2), displayString);
+        else {
+            int[] squares = {R.id.square1, R.id.square2, R.id.square3, R.id.square4, R.id.square5};
+
+            StringBuilder binaryBuilder = new StringBuilder();
+            for (int i = 0; i < 5; i++) {
+                int analogSensorValue = data[i*2] << 8 + data[i*2+1];
+
+                boolean fingerDown = analogSensorValue > 100; // To replace with ML method
+
+                int colour = fingerDown ? R.color.flex_on : R.color.flex_off;
+
+                View square = requireView().findViewById(squares[i]);
+                square.setBackgroundResource(colour);
+
+                binaryBuilder.append(fingerDown ? "1" : "0");
+            }
+
+            String binary = binaryBuilder.toString();
+
+            if (Integer.parseInt(binary, 2) == 0 || Objects.equals(selectedAlphabet.get(Integer.parseInt(binary, 2)), "\\CLEAR")) {
+                displayString = "";
+            } else if (Objects.equals(selectedAlphabet.get(Integer.parseInt(binary, 2)), "\\BACKSPACE")) {
+                if (selectedAlphabet.contains(" ")) {
+                    displayString = displayString.substring(0, displayString.length() - 1);
+                } else {
+                    displayString = displayString.substring(0, displayString.lastIndexOf(" "));
+                }
+            } else {
+                if (selectedAlphabet.get(32).equals("\\T")) {
+                    displayString += " ";
+                }
+                displayString += selectedAlphabet.get(Integer.parseInt(binary, 2));
+
+                if(!selectedAlphabet.contains(" ")) {
+                    speakText(selectedAlphabet.get(Integer.parseInt(binary, 2)));
+                }
+                else if(selectedAlphabet.get(Integer.parseInt(binary, 2)).equals(" ")) {
+                    String[] words = displayString.split(" ");
+
+                    String toSpeak;
+                    int howFarBack = 2;
+                    do {
+                        toSpeak = words[words.length - howFarBack];
+                        howFarBack++;
+                    } while(toSpeak.equals(" ") || toSpeak.isEmpty());
+
+                    speakText(toSpeak);
+                }
+            }
+
+            TextView displayView = requireView().findViewById(R.id.displayText);
+            displayView.setText(displayString);
+        }
     }
 }

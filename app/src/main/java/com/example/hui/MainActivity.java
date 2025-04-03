@@ -178,13 +178,6 @@ public class MainActivity extends AppCompatActivity {
         @SuppressLint("MissingPermission")
         @Override
         public void onReceive(Context context, Intent intent) {
-            String receivedData = intent.getStringExtra("bluetooth_data");
-            if (receivedData != null) {
-//                Log.d("MainActivity", "Received: " + receivedData);
-                bluetoothData = receivedData;
-                sharedViewModel.setData(bluetoothData);
-            }
-
             String action = intent.getAction();
             BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
