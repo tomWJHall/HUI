@@ -3,10 +3,14 @@ package com.example.hui;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -15,11 +19,13 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import android.provider.ContactsContract;
 import android.speech.tts.TextToSpeech;
 import android.telephony.SmsManager;
 import android.util.Log;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,11 +37,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.Manifest;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 
 import kotlin.ParameterName;
@@ -51,6 +59,7 @@ public class Interpreter extends Fragment {
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_DISPLAY = "display";
     private String displayString;
+    private int lastIndex = -1;
     private SharedViewModel viewModel;
     private List<List<String>> alphabets = new ArrayList<List<String>>();
     private List<String> selectedAlphabet = new ArrayList<String>();
@@ -181,6 +190,27 @@ public class Interpreter extends Fragment {
         });
     }
 
+    private final BroadcastReceiver receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String data = intent.getStringExtra("bluetooth_data");
+            byte[] payload = Base64.decode(data, Base64.DEFAULT);
+            viewModel.setData(payload);
+        }
+    };
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        LocalBroadcastManager.getInstance(requireContext()).registerReceiver(receiver, new IntentFilter("BluetoothDataReceived"));
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        LocalBroadcastManager.getInstance(requireContext()).unregisterReceiver(receiver);
+    }
+
     private void sendSMS(String phoneNumber, String message) {
         SmsManager smsManager = SmsManager.getDefault();
         smsManager.sendTextMessage(phoneNumber, null, message, null, null);
@@ -255,15 +285,14 @@ public class Interpreter extends Fragment {
     }
 
     public void setBinaryDisplay(byte[] data) {
-        Log.d("Binary", Arrays.toString(data));
+//        Log.d("Binary", Arrays.toString(data));
 
-        if(data[0] == 0xC && enableSMS) sendSMS(recipient.get(2), displayString);
-        else {
+        if(data[0] != 0xC || !enableSMS) {
             int[] squares = {R.id.square1, R.id.square2, R.id.square3, R.id.square4, R.id.square5};
 
             StringBuilder binaryBuilder = new StringBuilder();
             for (int i = 0; i < 5; i++) {
-                int analogSensorValue = data[i*2] << 8 + data[i*2+1];
+                int analogSensorValue = data[i * 2] << 8 + data[i * 2 + 1];
 
                 boolean fingerDown = analogSensorValue > 100; // To replace with ML method
 
@@ -277,39 +306,47 @@ public class Interpreter extends Fragment {
 
             String binary = binaryBuilder.toString();
 
-            if (Integer.parseInt(binary, 2) == 0 || Objects.equals(selectedAlphabet.get(Integer.parseInt(binary, 2)), "\\CLEAR")) {
-                displayString = "";
-            } else if (Objects.equals(selectedAlphabet.get(Integer.parseInt(binary, 2)), "\\BACKSPACE")) {
-                if (selectedAlphabet.contains(" ")) {
-                    displayString = displayString.substring(0, displayString.length() - 1);
+            int digitalNumber = Integer.parseInt(binary, 2);
+
+            if(digitalNumber >= 0 && lastIndex != digitalNumber) {
+                Log.d("Binary", binary);
+                if (Objects.equals(selectedAlphabet.get(digitalNumber), "\\CLEAR")) {
+                    displayString = "";
+                } else if (Objects.equals(selectedAlphabet.get(digitalNumber), "\\BACKSPACE")) {
+                    if (!selectedAlphabet.get(32).equals("\\T")) {
+                        displayString = displayString.substring(0, displayString.length() - 1);
+                    } else {
+                        displayString = displayString.substring(0, displayString.lastIndexOf(" "));
+                    }
                 } else {
-                    displayString = displayString.substring(0, displayString.lastIndexOf(" "));
-                }
-            } else {
-                if (selectedAlphabet.get(32).equals("\\T")) {
-                    displayString += " ";
-                }
-                displayString += selectedAlphabet.get(Integer.parseInt(binary, 2));
+                    if (selectedAlphabet.get(32).equals("\\T")) {
+                        displayString += " ";
+                    }
+                    lastIndex = digitalNumber;
+                    displayString += selectedAlphabet.get(lastIndex);
 
-                if(!selectedAlphabet.contains(" ")) {
-                    speakText(selectedAlphabet.get(Integer.parseInt(binary, 2)));
-                }
-                else if(selectedAlphabet.get(Integer.parseInt(binary, 2)).equals(" ")) {
-                    String[] words = displayString.split(" ");
+                    if (!selectedAlphabet.get(32).equals("\\T")) {
+                        speakText(selectedAlphabet.get(lastIndex+1));
+                    } else if (selectedAlphabet.get(lastIndex).equals(" ")) {
+                        String[] words = displayString.split(" ");
 
-                    String toSpeak;
-                    int howFarBack = 2;
-                    do {
-                        toSpeak = words[words.length - howFarBack];
-                        howFarBack++;
-                    } while(toSpeak.equals(" ") || toSpeak.isEmpty());
+                        String toSpeak;
+                        int howFarBack = 2;
+                        do {
+                            toSpeak = words[words.length - howFarBack];
+                            howFarBack++;
+                        } while (toSpeak.equals(" ") || toSpeak.isEmpty());
 
-                    speakText(toSpeak);
+                        speakText(toSpeak);
+                    }
                 }
+
+                TextView displayView = requireView().findViewById(R.id.displayText);
+                displayView.setText(displayString);
             }
-
-            TextView displayView = requireView().findViewById(R.id.displayText);
-            displayView.setText(displayString);
+        }
+        else {
+            sendSMS(recipient.get(2), displayString);
         }
     }
 }

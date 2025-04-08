@@ -17,6 +17,7 @@ import androidx.lifecycle.ViewModelStoreOwner;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,15 +26,13 @@ public class BluetoothReceiver {
     private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"); // Standard UUID for SPP
     private BluetoothSocket socket;
     private InputStream inputStream;
-    private Context context;
-    private SharedViewModel viewModel;
+    private final Context context;
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public BluetoothReceiver(Context context) {
         this.context = context;
-        viewModel = new ViewModelProvider((ViewModelStoreOwner) this).get(SharedViewModel.class);
     }
 
     public void connectToDevice(String deviceAddress) {
@@ -65,7 +64,7 @@ public class BluetoothReceiver {
                 try {
                     bytes = inputStream.read(buffer);
                     if(bytes == 10) {
-                        viewModel.setData(buffer);
+                        mainHandler.post(() -> sendData(buffer));
                     }
                 } catch (IOException e) {
                     Log.d("Read Data Error", e.toString());
@@ -78,7 +77,8 @@ public class BluetoothReceiver {
 
     private void sendData(byte[] receivedData) {
         Intent intent = new Intent("BluetoothDataReceived");
-        intent.putExtra("bluetooth_data", receivedData);
+        String encoded = Base64.encodeToString(receivedData, Base64.DEFAULT); // payload is byte[10]
+        intent.putExtra("bluetooth_data", encoded);
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
     }
 
