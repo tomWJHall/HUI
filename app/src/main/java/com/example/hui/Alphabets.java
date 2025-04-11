@@ -159,7 +159,7 @@ public class Alphabets extends Fragment {
                         buttonText,
                         "", "", "", "", "", "", "", "", "", "", "", "", "",
                         "", "", "", "", "", "", "", "", "", "", "", "", "", // Index 1-26
-                        "", "", "", "", ""
+                        "", "", "", "", "", ""
                 );
                 viewModel.addAlphabet(newAlphabet);
 

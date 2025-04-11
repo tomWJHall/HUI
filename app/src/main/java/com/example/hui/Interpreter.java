@@ -58,7 +58,8 @@ public class Interpreter extends Fragment {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_DISPLAY = "display";
-    private String displayString;
+    private String displayString = "";
+    private StringBuilder binaryBuilder = new StringBuilder();
     private int lastIndex = -1;
     private SharedViewModel viewModel;
     private List<List<String>> alphabets = new ArrayList<List<String>>();
@@ -115,9 +116,6 @@ public class Interpreter extends Fragment {
             public void onClick(View v) {
                 enableSpeech = !enableSpeech;
                 speechButton.setImageResource(enableSpeech ? android.R.drawable.ic_lock_silent_mode_off : android.R.drawable.ic_lock_silent_mode);
-                if(enableSpeech) {
-                    speakText("Speech enabled");
-                }
             }
         });
 
@@ -281,7 +279,7 @@ public class Interpreter extends Fragment {
     }
 
     public void speakText(String speak) {
-        t1.speak(speak, TextToSpeech.QUEUE_FLUSH, null, null);
+        if(enableSpeech) t1.speak(speak, TextToSpeech.QUEUE_FLUSH, null, null);
     }
 
     public void setBinaryDisplay(byte[] data) {
@@ -290,11 +288,13 @@ public class Interpreter extends Fragment {
         if(data[0] != 0xC || !enableSMS) {
             int[] squares = {R.id.square1, R.id.square2, R.id.square3, R.id.square4, R.id.square5};
 
-            StringBuilder binaryBuilder = new StringBuilder();
+            StringBuilder previousBinaryBuilder = binaryBuilder;
+            binaryBuilder = new StringBuilder();
+
             for (int i = 0; i < 5; i++) {
                 int analogSensorValue = data[i * 2] << 8 + data[i * 2 + 1];
 
-                boolean fingerDown = analogSensorValue > 100; // To replace with ML method
+                boolean fingerDown = previousBinaryBuilder.length() == 5 && previousBinaryBuilder.charAt(i) == '1' ? analogSensorValue > 50 : analogSensorValue > 10; // To replace with ML method
 
                 int colour = fingerDown ? R.color.flex_on : R.color.flex_off;
 
@@ -308,37 +308,39 @@ public class Interpreter extends Fragment {
 
             int digitalNumber = Integer.parseInt(binary, 2);
 
-            if(digitalNumber >= 0 && lastIndex != digitalNumber) {
-                Log.d("Binary", binary);
+            if(digitalNumber > 0 && lastIndex != digitalNumber) {
+                Log.d("Binary", binary + " " + digitalNumber);
                 if (Objects.equals(selectedAlphabet.get(digitalNumber), "\\CLEAR")) {
                     displayString = "";
-                } else if (Objects.equals(selectedAlphabet.get(digitalNumber), "\\BACKSPACE")) {
+                } else if (Objects.equals(selectedAlphabet.get(digitalNumber), "\\BACKSPACE") && !displayString.isEmpty()) {
                     if (!selectedAlphabet.get(32).equals("\\T")) {
                         displayString = displayString.substring(0, displayString.length() - 1);
                     } else {
                         displayString = displayString.substring(0, displayString.lastIndexOf(" "));
                     }
-                } else {
+                }
+                else if(selectedAlphabet.get(digitalNumber).contains("\\")) {
+                    displayString += "";
+                }
+                else if(digitalNumber < 32 && digitalNumber > 0) {
                     if (selectedAlphabet.get(32).equals("\\T")) {
                         displayString += " ";
-                    }
-                    lastIndex = digitalNumber;
-                    displayString += selectedAlphabet.get(lastIndex);
-
-                    if (!selectedAlphabet.get(32).equals("\\T")) {
-                        speakText(selectedAlphabet.get(lastIndex+1));
-                    } else if (selectedAlphabet.get(lastIndex).equals(" ")) {
+                        speakText(selectedAlphabet.get(digitalNumber));
+                    } else if (selectedAlphabet.get(digitalNumber).equals(" ") && !selectedAlphabet.get(lastIndex).equals(" ")) {
                         String[] words = displayString.split(" ");
 
                         String toSpeak;
-                        int howFarBack = 2;
+                        int howFarBack = 1;
                         do {
                             toSpeak = words[words.length - howFarBack];
                             howFarBack++;
-                        } while (toSpeak.equals(" ") || toSpeak.isEmpty());
+                        } while (toSpeak.isEmpty());
 
                         speakText(toSpeak);
                     }
+
+                    lastIndex = digitalNumber;
+                    displayString += selectedAlphabet.get(lastIndex);
                 }
 
                 TextView displayView = requireView().findViewById(R.id.displayText);
